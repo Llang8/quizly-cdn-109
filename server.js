@@ -3,11 +3,18 @@ const dotenv = require('dotenv')
 const { connectDB } = require('./src/db')
 const { User, Question, Quiz, Submission } = require('./src/models')
 const setupRoutes = require('./src/routes')
+const { graphqlHTTP } = require('express-graphql')
+const schema = require('./src/graphql/schema')
 
 dotenv.config()
 connectDB()
 
 const app = express()
+
+app.use('/graphql', graphqlHTTP({
+    schema,
+    graphiql: true
+}))
 
 // require('./src/routes')(app)
 setupRoutes(app)
