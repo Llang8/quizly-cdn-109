@@ -1,3 +1,6 @@
 module.exports = (req, res) => {
-    res.send('Logout')
+    res.cookie('JWT', '', {
+        httpOnly: true
+    })
+    res.redirect('/auth/login')
 }

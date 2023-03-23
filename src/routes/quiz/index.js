@@ -14,6 +14,6 @@ QuizRouter.route('/:slug/submit')
     .post(require('./submit'))
 
 QuizRouter.route('/results/:id')
-    .get(require('./submit'))
+    .get(require('./results.view'))
 
 module.exports = QuizRouter

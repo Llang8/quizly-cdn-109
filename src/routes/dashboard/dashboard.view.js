@@ -1,3 +1,3 @@
 module.exports = (req, res) => {
-    res.send('Dashboard')
+    res.render('dashboard', { user: req.verifiedUser })
 }
