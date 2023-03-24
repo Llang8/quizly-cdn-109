@@ -1,6 +1,7 @@
-const { User } = require('../models')
-const { GraphQLString } = require('graphql')
+const { User, Question, Quiz, Submission } = require('../models')
+const { GraphQLString, GraphQLList } = require('graphql')
 const { createJWT } = require('../util/auth')
+const { QuestionInputType, AnswerInputType } = require('./types')
 
 const register = {
     type: GraphQLString,
@@ -48,7 +49,89 @@ const login = {
     }
 }
 
+const createQuiz = {
+    type: GraphQLString,
+    args: {
+        title: { type: GraphQLString },
+        description: { type: GraphQLString },
+        userId: { type: GraphQLString },
+        questions: { type: new GraphQLList(QuestionInputType) }
+    },
+    async resolve(parent, args) {
+        console.log(args)
+        const slugify = args.title.toLowerCase()
+            .replace(/[^\w ]+/g, '')
+            .replace(/[ ]/g, '-')
+
+        let fullSlug = ''
+
+        while(true) {
+            let slugId = Math.floor(Math.random() * 1000000)
+
+            fullSlug = `${slugify}-${slugId}`
+
+            const existingQuiz = await Quiz.findOne({ slug: fullSlug })
+
+            if (!existingQuiz) {
+                break
+            }
+        }
+
+        const quiz = new Quiz({
+            slug: fullSlug,
+            title: args.title,
+            description: args.description,
+            userId: args.userId
+        })
+
+        await quiz.save()
+
+        for (const question of args.questions) {
+            const questionObj = new Question({
+                title: question.title,
+                correctAnswer: question.correctAnswer,
+                order: question.order,
+                quizId: quiz.id
+            })
+            questionObj.save()
+        }
+
+        return fullSlug
+    }
+}
+
+const submitQuiz = {
+    type: GraphQLString,
+    args: {
+        userId: { type: GraphQLString },
+        quizId: { type: GraphQLString },
+        answers: { type: new GraphQLList(AnswerInputType) }
+    },
+    async resolve(parent, args) {
+        let correct = 0
+
+        for (const answer of args.answers) {
+            const question = await Question.findById(answer.questionId)
+
+            if (question.correctAnswer.toLowerCase().trim() === answer.answer.toLowerCase().trim()) {
+                correct++
+            }
+        }
+
+        const submission = new Submission({
+            userId: args.userId,
+            quizId: args.quizId,
+            score: (correct / args.answers.length) * 100
+        })
+
+        await submission.save()
+        return submission.id
+    }
+}
+
 module.exports = {
     register,
-    login
+    login,
+    createQuiz,
+    submitQuiz
 } 

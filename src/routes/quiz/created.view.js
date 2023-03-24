@@ -1,3 +1,3 @@
 module.exports = (req, res) => {
-    res.send('Created')
+    res.render('quiz-success', { slug: req.params.slug })
 }
